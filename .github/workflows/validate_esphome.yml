@@ -1,0 +1,17 @@
+name: Validate ESPHome YAML
+
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ESPHome
+        run: pip install esphome
+      - name: Validate YAML
+        run: |
+          for file in *.yaml; do
+            echo "🔍 Validating $file"
+            esphome config "$file"
+          done
