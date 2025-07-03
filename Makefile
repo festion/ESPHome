@@ -5,7 +5,7 @@
 
 # Variables
 ESPHOME_CMD := esphome
-CONTAINER_CMD := docker-compose
+CONTAINER_CMD := docker compose
 DEVICES := $(wildcard *.yaml)
 ACTIVE_DEVICES := $(filter-out secrets.yaml docker-compose.yml, $(DEVICES))
 
