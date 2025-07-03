@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   esphome:
     image: ghcr.io/esphome/esphome:latest
@@ -15,7 +13,7 @@ services:
       - esphome_data:/data
     restart: unless-stopped
     privileged: true  # Required for USB device access
-    network_mode: host  # Required for device discovery
+    # network_mode: host  # Commented out - conflicts with port mapping
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0  # USB serial device (adjust as needed)
       - /dev/ttyACM0:/dev/ttyACM0  # USB ACM device (adjust as needed)
