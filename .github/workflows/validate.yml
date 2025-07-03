@@ -1,0 +1,74 @@
+name: ESPHome Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install ESPHome
+      run: |
+        pip install esphome
+        
+    - name: Create secrets file
+      run: |
+        cat > secrets.yaml << EOF
+        wifi_ssid: "test_network"
+        wifi_password: "test_password"
+        ota_password: "test_ota_password"
+        api_encryption_key: "test_api_key_32_characters_long"
+        fallback_hotspot_password: "test_fallback"
+        homeassistant_api_password: "test_ha_password"
+        mqtt_broker: "192.168.1.100"
+        mqtt_username: "test_user"
+        mqtt_password: "test_password"
+        EOF
+        
+    - name: Validate configurations
+      run: |
+        # Find all YAML files that are device configurations
+        for file in *.yaml; do
+          # Skip non-device files
+          if [[ "$file" == "secrets.yaml" || "$file" == "docker-compose.yml" ]]; then
+            continue
+          fi
+          
+          echo "Validating $file..."
+          if ! esphome config "$file"; then
+            echo "❌ Validation failed for $file"
+            exit 1
+          else
+            echo "✅ Validation passed for $file"
+          fi
+        done
+        
+    - name: Compile configurations
+      run: |
+        # Compile configurations to ensure they build
+        for file in *.yaml; do
+          # Skip non-device files
+          if [[ "$file" == "secrets.yaml" || "$file" == "docker-compose.yml" ]]; then
+            continue
+          fi
+          
+          echo "Compiling $file..."
+          if ! esphome compile "$file"; then
+            echo "❌ Compilation failed for $file"
+            exit 1
+          else
+            echo "✅ Compilation passed for $file"
+          fi
+        done

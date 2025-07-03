@@ -1,0 +1,110 @@
+# ESPHome Device Configuration Template
+# Copy this file and rename to your device name
+# Example: cp templates/device-template.yaml my-sensor.yaml
+
+substitutions:
+  device_name: "device-name"  # Change this to your device name
+  friendly_name: "Device Name"  # Human readable name
+  device_description: "ESPHome device"  # Brief description
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: ${device_description}
+
+# Board configuration - choose appropriate board
+esp32:
+  board: esp32dev  # Common options: esp32dev, nodemcu-32s, wemos_d1_mini32
+  framework:
+    type: arduino
+    
+# For ESP8266 devices, use this instead:
+# esp8266:
+#   board: nodemcuv2  # Common options: nodemcuv2, d1_mini, wemos_d1_mini32
+
+# Enable logging
+logger:
+  level: INFO  # Options: VERBOSE, DEBUG, INFO, WARN, ERROR
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key  # Generate with: esphome config device.yaml
+
+# Over-The-Air updates
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# WiFi configuration
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  # Enable fallback hotspot
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret fallback_hotspot_password
+
+# Captive portal for initial setup
+captive_portal:
+
+# Web server (optional - comment out for better performance)
+web_server:
+  port: 80
+
+# Status LED (optional)
+status_led:
+  pin: GPIO2  # Adjust pin for your board
+
+# Example sensors - uncomment and modify as needed
+# sensor:
+#   - platform: wifi_signal
+#     name: "${friendly_name} WiFi Signal"
+#     update_interval: 60s
+#   
+#   - platform: uptime
+#     name: "${friendly_name} Uptime"
+#   
+#   - platform: dht
+#     pin: GPIO4
+#     temperature:
+#       name: "${friendly_name} Temperature"
+#     humidity:
+#       name: "${friendly_name} Humidity"
+#     update_interval: 30s
+
+# Example binary sensors - uncomment and modify as needed  
+# binary_sensor:
+#   - platform: gpio
+#     pin:
+#       number: GPIO0
+#       mode: INPUT_PULLUP
+#       inverted: true
+#     name: "${friendly_name} Button"
+
+# Example switches - uncomment and modify as needed
+# switch:
+#   - platform: gpio
+#     pin: GPIO5
+#     name: "${friendly_name} Relay"
+#     id: relay_1
+
+# Example lights - uncomment and modify as needed
+# light:
+#   - platform: binary
+#     name: "${friendly_name} Light"
+#     output: relay_1
+
+# Text sensors for diagnostics
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP Address"
+    ssid:
+      name: "${friendly_name} Connected SSID"
+    mac_address:
+      name: "${friendly_name} Mac Address"
+  
+  - platform: version
+    name: "${friendly_name} ESPHome Version"

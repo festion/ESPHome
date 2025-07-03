@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  esphome:
+    image: ghcr.io/esphome/esphome:latest
+    container_name: esphome-dev
+    environment:
+      - ESPHOME_DASHBOARD_USE_PING=true
+      - TZ=America/Chicago
+    ports:
+      - "6052:6052"  # ESPHome dashboard
+    volumes:
+      - .:/config
+      - /etc/localtime:/etc/localtime:ro
+      - esphome_data:/data
+    restart: unless-stopped
+    privileged: true  # Required for USB device access
+    network_mode: host  # Required for device discovery
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0  # USB serial device (adjust as needed)
+      - /dev/ttyACM0:/dev/ttyACM0  # USB ACM device (adjust as needed)
+
+volumes:
+  esphome_data:
