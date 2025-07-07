@@ -1,0 +1,28 @@
+substitutions:
+  name: xiao-minimal-debug
+  friendly_name: "XIAO Minimal Debug"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: 600
+    then:
+      - logger.log: "Device booted successfully"
+
+# Minimal ESP32-C6 configuration
+esp32:
+  board: esp32-c6-devkitc-1
+  variant: esp32c6
+  framework:
+    type: esp-idf
+
+logger:
+  level: DEBUG
+  baud_rate: 115200  # Enable serial output for debugging
+
+# Simple LED test
+interval:
+  - interval: 2s
+    then:
+      - logger.log: "Heartbeat - device is running"

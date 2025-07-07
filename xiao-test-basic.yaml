@@ -1,0 +1,41 @@
+substitutions:
+  name: xiao-test-basic
+  friendly_name: "XIAO Test Basic"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+# ESP32-C6 basic configuration
+esp32:
+  board: esp32-c6-devkitc-1
+  flash_size: 4mb
+  variant: esp32c6
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESPTOOLPY_FLASHSIZE_4MB: y
+
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: "Lakehouse"
+  password: "redflower805"
+  
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "XIAO-Test-Fallback"
+    password: "123456789abc"
+
+captive_portal:
+
+# Simple LED to show it's working
+status_led:
+  pin: GPIO15  # Built-in LED on XIAO ESP32C6

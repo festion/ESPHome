@@ -37,8 +37,8 @@ esp32:
       # BLE optimization options
       CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y
       CONFIG_ESP_TASK_WDT_TIMEOUT_S: "10"
-    version: 5.3.1
-    platform_version: 6.9.0
+    # version: 5.3.1  # Use recommended version
+    # platform_version: 6.9.0  # Use recommended version
 
 # ADC component fix for ESP32-C6
 external_components:

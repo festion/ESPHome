@@ -1,11 +1,11 @@
 substitutions:
   wifi_ssid: !secret wifi_ssid
   wifi_password: !secret wifi_password
-  name: xiao-ble-proxy2
-  friendly_name: "XIAO BLE Proxy 2 - Master Bedroom"
-  comment: "XIAO ESP32C6 BLE Proxy optimized for Bermuda - Master Bedroom"
+  name: xiao-ble-proxy-working
+  friendly_name: "XIAO BLE Proxy Working"
+  comment: "XIAO ESP32C6 BLE Proxy based on working example"
   name_add_mac_suffix: "True"
-  baud_rate: "0"  # Disable serial logging for better performance
+  baud_rate: "0"
   ble_interval: 320ms
   ble_window: 300ms
   proxy_active_scan: "True"
@@ -13,11 +13,7 @@ substitutions:
   api_key: !secret api_encryption_key
   beacon_uuid: "59E0D1DA-AF5D-47C3-AB2D-2F166DEAD901"
   beacon_major: "42069"
-  beacon_minor: "1002"  # Unique minor for proxy 2
-
-# packages:
-#   Bermuda.include_minimal: github://agittins/bermuda-proxies/packages/bermuda-proxy-esp32-c3-minimal.yaml
-# Note: Enable after basic configuration is working
+  beacon_minor: "1001"
 
 esphome:
   name: ${name}
@@ -25,34 +21,24 @@ esphome:
   comment: ${comment}
   name_add_mac_suffix: ${name_add_mac_suffix}
 
-# ESP32-C6 specific configuration
+# ESP32-C6 configuration matching working example
 esp32:
   board: esp32-c6-devkitc-1
   flash_size: 4mb
   variant: esp32c6
   framework:
     type: esp-idf
+    # Let ESPHome choose the versions
     sdkconfig_options:
       CONFIG_ESPTOOLPY_FLASHSIZE_4MB: y
-      # BLE optimization options
+      # BLE specific optimizations from working example
       CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y
       CONFIG_ESP_TASK_WDT_TIMEOUT_S: "10"
-    # version: 5.3.1  # Use recommended version
-    # platform_version: 6.9.0  # Use recommended version
-
-# ADC component fix for ESP32-C6
-external_components:
-  - source:
-      type: git
-      url: https://github.com/lboue/esphome
-      ref: adc_oneshot
-    components: [ adc ]
-    refresh: 0s
 
 logger:
   baud_rate: ${baud_rate}
 
-# Home Assistant API with optimized BLE control
+# Enable Home Assistant API
 api:
   encryption:
     key: ${api_key}
@@ -78,9 +64,14 @@ wifi:
   password: ${wifi_password}
   fast_connect: True
   manual_ip:
-    static_ip: 192.168.1.202  # Unique IP for proxy 2
+    static_ip: 192.168.1.201
     gateway: 192.168.1.1
     subnet: 255.255.255.0
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "XIAO-BLE-Proxy-Working"
+    password: "123456789abc"
 
 captive_portal:
 
@@ -88,7 +79,7 @@ captive_portal:
 bluetooth_proxy:
   active: True
 
-# BLE tracker with Bermuda-optimized settings
+# BLE tracker with optimized settings
 esp32_ble_tracker:
   scan_parameters:
     continuous: True

@@ -1,0 +1,25 @@
+substitutions:
+  name: xiao-arduino-minimal
+  friendly_name: "XIAO Arduino Minimal"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+# Try Arduino framework instead of ESP-IDF
+esp32:
+  board: esp32-c6-devkitc-1
+  variant: esp32c6
+  framework:
+    type: arduino
+    version: recommended
+
+logger:
+  level: DEBUG
+  baud_rate: 115200
+
+# Just basic heartbeat - no WiFi, no networking
+interval:
+  - interval: 5s
+    then:
+      - logger.log: "Device is alive - heartbeat"

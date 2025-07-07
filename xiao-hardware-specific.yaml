@@ -1,0 +1,36 @@
+substitutions:
+  name: xiao-hardware-specific
+  friendly_name: "XIAO Hardware Specific"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+# XIAO ESP32C6 specific hardware configuration
+esp32:
+  board: esp32-c6-devkitm-1  # Use M1 variant for XIAO
+  variant: esp32c6
+  flash_size: 4MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      # XIAO specific flash settings
+      CONFIG_ESPTOOLPY_FLASHSIZE_4MB: y
+      CONFIG_ESPTOOLPY_FLASHMODE_QIO: y
+      CONFIG_ESPTOOLPY_FLASHFREQ_80M: y
+      # Disable problematic features
+      CONFIG_ESP_TASK_WDT_EN: n
+      CONFIG_ESP_INT_WDT_EN: n
+      # Reduce memory usage
+      CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE: "2048"
+      CONFIG_ESP_MAIN_TASK_STACK_SIZE: "2048"
+
+logger:
+  level: DEBUG
+  baud_rate: 115200
+
+# Minimal heartbeat only
+interval:
+  - interval: 10s
+    then:
+      - logger.log: "XIAO hardware test"

@@ -1,0 +1,294 @@
+substitutions:
+  name: curatron-esp
+  friendly_name: "Curatron ESP Humidity Sensor"
+  comment: "Humidity and temperature sensor for herb drying/curing chamber"
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+  ota_pw: !secret ota_password
+  api_key: !secret api_encryption_key
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  comment: ${comment}
+  project:
+    name: "curatron.humidity-sensor"
+    version: "1.0.0"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+  # ESP-WROOM-32 optimized settings
+
+# Enable logging
+logger:
+  level: INFO
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: ${api_key}
+  reboot_timeout: 15min
+
+ota:
+  - platform: esphome
+    password: ${ota_pw}
+
+wifi:
+  ssid: ${wifi_ssid}
+  password: ${wifi_password}
+  fast_connect: true
+  
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Curatron-ESP-Fallback"
+    password: "CuratronESP2024"
+
+captive_portal:
+
+# I2C bus for AHT20 sensor
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+  id: bus_a
+
+# Primary sensors for humidity and temperature monitoring
+sensor:
+  # AHT20 - Industrial grade I2C humidity and temperature sensor
+  - platform: aht10
+    variant: AHT20
+    temperature:
+      name: "Curatron Temperature"
+      id: curatron_temp
+      unit_of_measurement: "°C"
+      accuracy_decimals: 1
+      device_class: "temperature"
+      state_class: "measurement"
+      filters:
+        - offset: 0.0  # Calibration offset if needed
+    humidity:
+      name: "Curatron Humidity"
+      id: curatron_humidity
+      unit_of_measurement: "%"
+      accuracy_decimals: 1
+      device_class: "humidity"
+      state_class: "measurement"
+      filters:
+        - offset: 0.0  # Calibration offset if needed
+    address: 0x38
+    update_interval: 30s
+
+  # ESP32 internal temperature sensor (backup/comparison)
+  - platform: internal_temperature
+    name: "Curatron ESP32 Internal Temperature"
+    id: esp32_internal_temp
+    entity_category: diagnostic
+    update_interval: 60s
+
+  # VPD (Vapor Pressure Deficit) calculation
+  - platform: template
+    name: "Curatron VPD"
+    id: curatron_vpd
+    unit_of_measurement: "kPa"
+    accuracy_decimals: 2
+    device_class: "atmospheric_pressure"
+    state_class: "measurement"
+    update_interval: 60s
+    lambda: |-
+      if (id(curatron_temp).has_state() && id(curatron_humidity).has_state()) {
+        float temp = id(curatron_temp).state;
+        float humidity = id(curatron_humidity).state;
+        
+        // Calculate saturation vapor pressure (kPa)
+        float svp = 0.6108 * exp((17.27 * temp) / (temp + 237.3));
+        
+        // Calculate actual vapor pressure
+        float avp = svp * (humidity / 100.0);
+        
+        // Calculate VPD
+        float vpd = svp - avp;
+        
+        return vpd;
+      }
+      return {};
+
+  # Dew point calculation
+  - platform: template
+    name: "Curatron Dew Point"
+    id: curatron_dew_point
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    update_interval: 60s
+    lambda: |-
+      if (id(curatron_temp).has_state() && id(curatron_humidity).has_state()) {
+        float temp = id(curatron_temp).state;
+        float humidity = id(curatron_humidity).state;
+        
+        // Magnus formula for dew point
+        float a = 17.27;
+        float b = 237.7;
+        float alpha = ((a * temp) / (b + temp)) + log(humidity / 100.0);
+        float dew_point = (b * alpha) / (a - alpha);
+        
+        return dew_point;
+      }
+      return {};
+
+  # Absolute humidity calculation (g/m³)
+  - platform: template
+    name: "Curatron Absolute Humidity"
+    id: curatron_absolute_humidity
+    unit_of_measurement: "g/m³"
+    accuracy_decimals: 2
+    state_class: "measurement"
+    update_interval: 60s
+    lambda: |-
+      if (id(curatron_temp).has_state() && id(curatron_humidity).has_state()) {
+        float temp = id(curatron_temp).state;
+        float rh = id(curatron_humidity).state;
+        
+        // Calculate absolute humidity for cold environment
+        float svp = 0.6108 * exp((17.27 * temp) / (temp + 237.3));
+        float avp = svp * (rh / 100.0);
+        float absolute_humidity = (avp * 1000.0 * 18.016) / (8.314 * (temp + 273.15));
+        
+        return absolute_humidity;
+      }
+      return {};
+
+  # WiFi signal strength
+  - platform: wifi_signal
+    name: "Curatron WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+
+  # Uptime sensor
+  - platform: uptime
+    name: "Curatron Uptime"
+    entity_category: diagnostic
+
+# Binary sensors for alerts
+binary_sensor:
+  # Over-drying protection alert (humidity dropped below 60%)
+  - platform: template
+    name: "Curatron Over-Drying Alert"
+    id: over_drying_alert
+    device_class: problem
+    lambda: |-
+      if (id(curatron_humidity).has_state()) {
+        return id(curatron_humidity).state < 60.0;  // CRITICAL: Alert if humidity < 60%
+      }
+      return false;
+
+  # High humidity alert for automation trigger
+  - platform: template
+    name: "Curatron Dehumidifier Needed"
+    id: dehumidifier_needed
+    device_class: moisture
+    lambda: |-
+      if (id(curatron_humidity).has_state()) {
+        return id(curatron_humidity).state > 62.0;  // Signal when dehumidifier should run
+      }
+      return false;
+
+  # Temperature alert for refrigerator environment
+  - platform: template
+    name: "Curatron Temperature Alert"
+    id: temp_alert
+    device_class: problem
+    lambda: |-
+      if (id(curatron_temp).has_state()) {
+        float temp = id(curatron_temp).state;
+        return temp > 15.0 || temp < 10.0;  // Alert if temp outside 10-15°C (50-59°F)
+      }
+      return false;
+
+# Text sensors for status information
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "Curatron IP Address"
+      entity_category: diagnostic
+    ssid:
+      name: "Curatron Connected SSID"
+      entity_category: diagnostic
+    mac_address:
+      name: "Curatron MAC Address"
+      entity_category: diagnostic
+
+  - platform: version
+    name: "Curatron ESPHome Version"
+    entity_category: diagnostic
+
+  # Curing phase status
+  - platform: template
+    name: "Curatron Curing Phase"
+    id: curing_phase
+    update_interval: 300s
+    lambda: |-
+      if (id(curatron_humidity).has_state() && id(curatron_temp).has_state()) {
+        float humidity = id(curatron_humidity).state;
+        float temp = id(curatron_temp).state;
+        
+        // Calculate days elapsed based on humidity drop from 80%
+        int days_elapsed = (80.0 - humidity) / 2.0;
+        
+        if (humidity > 80.0) {
+          return {"Pre-Cure (Too Wet)"};
+        } else if (humidity >= 78.0) {
+          return {"Day 1: 80% → 78%"};
+        } else if (humidity >= 76.0) {
+          return {"Day 2: 78% → 76%"};
+        } else if (humidity >= 74.0) {
+          return {"Day 3: 76% → 74%"};
+        } else if (humidity >= 72.0) {
+          return {"Day 4: 74% → 72%"};
+        } else if (humidity >= 70.0) {
+          return {"Day 5: 72% → 70%"};
+        } else if (humidity >= 68.0) {
+          return {"Day 6: 70% → 68%"};
+        } else if (humidity >= 66.0) {
+          return {"Day 7: 68% → 66%"};
+        } else if (humidity >= 64.0) {
+          return {"Day 8: 66% → 64%"};
+        } else if (humidity >= 62.0) {
+          return {"Day 9: 64% → 62%"};
+        } else if (humidity >= 60.0) {
+          return {"Day 10+: Stable at 60%"};
+        } else {
+          return {"ALERT: Over-Dried!"};
+        }
+      }
+      return {"Unknown"};
+
+# Control buttons
+button:
+  - platform: restart
+    name: "Curatron Restart"
+    entity_category: config
+
+  - platform: factory_reset
+    name: "Curatron Factory Reset"
+    entity_category: config
+
+  - platform: safe_mode
+    name: "Curatron Safe Mode"
+    entity_category: config
+
+# Status LED
+status_led:
+  pin: GPIO2
+
+# Deep sleep for power saving (optional - disable if always powered)
+# deep_sleep:
+#   id: deep_sleep_1
+#   run_duration: 30s
+#   sleep_duration: 5min
+
+# Web server for debugging (optional)
+# web_server:
+#   port: 80
