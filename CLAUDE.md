@@ -16,22 +16,23 @@ This is an ESPHome development environment for creating and managing ESP32/ESP82
 - **WRoom Micro USB** (`wroommicrousb.yaml`): Generic ESP32 development board
 - **Water Level Sensor** (`waterlevelsensor.yaml`): Sensor device for water monitoring
 
-### NEW: Xiao ESP32-C6 BLE Proxy Network
+### UPDATED: Xiao ESP32-C6 BLE Proxy Network
 **Purpose**: Bermuda BLE Trilateration for precise indoor location tracking
 **Hardware**: 3x Seeed Studio Xiao ESP32-C6 with external UFL antennas
 
 #### Device Configurations:
-- **`xiao-ble-proxy-1.yaml`**: Primary BLE proxy (192.168.1.120)
-- **`xiao-ble-proxy-2.yaml`**: Secondary BLE proxy  
-- **`xiao-ble-proxy-3.yaml`**: Tertiary BLE proxy
+- **`xiao-ble-proxy-1.yaml`**: Living Room BLE proxy (192.168.1.201, beacon minor 1001)
+- **`xiao-ble-proxy-2.yaml`**: Dining Room BLE proxy (192.168.1.202, beacon minor 1002)
+- **`xiao-ble-proxy-3.yaml`**: Kitchen BLE proxy (192.168.1.203, beacon minor 1003)
 
 #### Key Features:
-- **External Antenna Support**: `CONFIG_ESP_PHY_EXTERNAL_ANT_ENABLE: y` for UFL connectors
+- **Static IP Configuration**: Fixed IPs for reliable network communication
+- **iBeacon Support**: Unique beacon minors for precise location triangulation
 - **Optimized BLE Scanning**: 320ms interval, 300ms window for Bermuda compatibility
-- **High WiFi Power**: 20dB output power for extended range
+- **Smart Power Management**: BLE scanning controlled by Home Assistant connection
 - **ESP32-C6 Specific**: ESP-IDF framework with C6 variant optimizations
-- **Compiler Fixes**: Build flags to handle reorder warnings
-- **Diagnostic Monitoring**: WiFi signal strength, uptime, temperature sensors
+- **ADC Component Fix**: External component for ESP32-C6 ADC compatibility
+- **Diagnostic Monitoring**: WiFi signal strength, uptime, version tracking
 
 #### Troubleshooting Notes:
 - **Build Issue**: Added `-Wno-error=reorder` and `-Wno-reorder` flags for ESP32-C6 compilation
