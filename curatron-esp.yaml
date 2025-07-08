@@ -1,7 +1,7 @@
 substitutions:
   name: curatron-esp
   friendly_name: "Curatron ESP Humidity Sensor"
-  comment: "Humidity and temperature sensor for herb drying/curing chamber"
+  comment: "ESP32-S3 DHT22 humidity/temperature sensor for curing chamber monitoring"
   wifi_ssid: !secret wifi_ssid
   wifi_password: !secret wifi_password
   ota_pw: !secret ota_password
@@ -16,14 +16,17 @@ esphome:
     version: "1.0.0"
 
 esp32:
-  board: esp32dev
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
   framework:
     type: arduino
-  # ESP-WROOM-32 optimized settings
+    version: latest
+  # ESP32-S3 WROOM optimized settings
 
 # Enable logging
 logger:
   level: INFO
+  baud_rate: 0  # Disable UART logging to prevent conflicts
 
 # Enable Home Assistant API
 api:
@@ -36,29 +39,47 @@ ota:
     password: ${ota_pw}
 
 wifi:
-  ssid: ${wifi_ssid}
-  password: ${wifi_password}
-  fast_connect: true
+  networks:
+    - ssid: ${wifi_ssid}
+      password: ${wifi_password}
+      priority: 1.0
+  
+  # Compatibility settings for problematic routers
+  fast_connect: false
+  power_save_mode: none
+  output_power: 8.5dB  # Minimum allowed power level
+  
+  # Connection timing adjustments
+  reboot_timeout: 0s  # Disable reboot, let AP mode activate
+  
+  # Manual network configuration if DHCP fails
+  # manual_ip:
+  #   static_ip: 192.168.1.100
+  #   gateway: 192.168.1.1
+  #   subnet: 255.255.255.0
+  #   dns1: 8.8.8.8
   
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Curatron-ESP-Fallback"
     password: "CuratronESP2024"
+  
+  # Connection event handlers
+  on_connect:
+    - delay: 2s
+    - logger.log: "WiFi Connected Successfully!"
+  on_disconnect:
+    - delay: 10s
+    - logger.log: "WiFi Disconnected - attempting reconnection"
 
 captive_portal:
 
-# I2C bus for AHT20 sensor
-i2c:
-  sda: GPIO21
-  scl: GPIO22
-  scan: true
-  id: bus_a
-
-# Primary sensors for humidity and temperature monitoring
+# DHT22 sensor on GPIO7
 sensor:
-  # AHT20 - Industrial grade I2C humidity and temperature sensor
-  - platform: aht10
-    variant: AHT20
+  # DHT22 - Temperature and humidity sensor
+  - platform: dht
+    pin: GPIO7
+    model: DHT22
     temperature:
       name: "Curatron Temperature"
       id: curatron_temp
@@ -77,12 +98,11 @@ sensor:
       state_class: "measurement"
       filters:
         - offset: 0.0  # Calibration offset if needed
-    address: 0x38
     update_interval: 30s
 
-  # ESP32 internal temperature sensor (backup/comparison)
+  # ESP32-S3 internal temperature sensor (diagnostic)
   - platform: internal_temperature
-    name: "Curatron ESP32 Internal Temperature"
+    name: "Curatron ESP32-S3 Internal Temperature"
     id: esp32_internal_temp
     entity_category: diagnostic
     update_interval: 60s
@@ -171,41 +191,8 @@ sensor:
     name: "Curatron Uptime"
     entity_category: diagnostic
 
-# Binary sensors for alerts
-binary_sensor:
-  # Over-drying protection alert (humidity dropped below 60%)
-  - platform: template
-    name: "Curatron Over-Drying Alert"
-    id: over_drying_alert
-    device_class: problem
-    lambda: |-
-      if (id(curatron_humidity).has_state()) {
-        return id(curatron_humidity).state < 60.0;  // CRITICAL: Alert if humidity < 60%
-      }
-      return false;
-
-  # High humidity alert for automation trigger
-  - platform: template
-    name: "Curatron Dehumidifier Needed"
-    id: dehumidifier_needed
-    device_class: moisture
-    lambda: |-
-      if (id(curatron_humidity).has_state()) {
-        return id(curatron_humidity).state > 62.0;  // Signal when dehumidifier should run
-      }
-      return false;
-
-  # Temperature alert for refrigerator environment
-  - platform: template
-    name: "Curatron Temperature Alert"
-    id: temp_alert
-    device_class: problem
-    lambda: |-
-      if (id(curatron_temp).has_state()) {
-        float temp = id(curatron_temp).state;
-        return temp > 15.0 || temp < 10.0;  // Alert if temp outside 10-15°C (50-59°F)
-      }
-      return false;
+# Simplified binary sensors - let Home Assistant handle the logic
+# (Removed complex automation alerts)
 
 # Text sensors for status information
 text_sensor:
@@ -223,47 +210,6 @@ text_sensor:
   - platform: version
     name: "Curatron ESPHome Version"
     entity_category: diagnostic
-
-  # Curing phase status
-  - platform: template
-    name: "Curatron Curing Phase"
-    id: curing_phase
-    update_interval: 300s
-    lambda: |-
-      if (id(curatron_humidity).has_state() && id(curatron_temp).has_state()) {
-        float humidity = id(curatron_humidity).state;
-        float temp = id(curatron_temp).state;
-        
-        // Calculate days elapsed based on humidity drop from 80%
-        int days_elapsed = (80.0 - humidity) / 2.0;
-        
-        if (humidity > 80.0) {
-          return {"Pre-Cure (Too Wet)"};
-        } else if (humidity >= 78.0) {
-          return {"Day 1: 80% → 78%"};
-        } else if (humidity >= 76.0) {
-          return {"Day 2: 78% → 76%"};
-        } else if (humidity >= 74.0) {
-          return {"Day 3: 76% → 74%"};
-        } else if (humidity >= 72.0) {
-          return {"Day 4: 74% → 72%"};
-        } else if (humidity >= 70.0) {
-          return {"Day 5: 72% → 70%"};
-        } else if (humidity >= 68.0) {
-          return {"Day 6: 70% → 68%"};
-        } else if (humidity >= 66.0) {
-          return {"Day 7: 68% → 66%"};
-        } else if (humidity >= 64.0) {
-          return {"Day 8: 66% → 64%"};
-        } else if (humidity >= 62.0) {
-          return {"Day 9: 64% → 62%"};
-        } else if (humidity >= 60.0) {
-          return {"Day 10+: Stable at 60%"};
-        } else {
-          return {"ALERT: Over-Dried!"};
-        }
-      }
-      return {"Unknown"};
 
 # Control buttons
 button:

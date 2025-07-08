@@ -15,6 +15,35 @@ This is an ESPHome development environment for creating and managing ESP32/ESP82
 - **Voice PE** (`voice-pe.yaml`): ESP32-S3 based voice processing device  
 - **WRoom Micro USB** (`wroommicrousb.yaml`): Generic ESP32 development board
 - **Water Level Sensor** (`waterlevelsensor.yaml`): Sensor device for water monitoring
+- **Curatron ESP** (`curatron-esp.yaml`): ESP32-S3 DHT22 humidity/temperature sensor for curing chamber
+
+### NEW: Curatron ESP32-S3 Sensor
+**Purpose**: Environmental monitoring for herb/material curing chamber
+**Hardware**: FreeNove ESP32-S3 WROOM with DHT22 sensor
+
+#### Device Configuration:
+- **Board**: ESP32-S3-DevKitC-1 with latest Arduino framework
+- **Sensor**: DHT22 temperature and humidity sensor on GPIO7 (D7)
+- **Network**: WiFi with enhanced compatibility settings and fallback AP
+- **Monitoring**: Real-time environmental data for Home Assistant automation
+
+#### Key Features:
+- **DHT22 Sensor**: Temperature and humidity readings every 30 seconds
+- **Calculated Metrics**: VPD, dew point, absolute humidity for optimal curing
+- **WiFi Reliability**: Enhanced connection settings with fallback hotspot mode
+- **Home Assistant Integration**: Clean sensor data for external automation logic
+- **Diagnostic Monitoring**: ESP32-S3 internal temperature, WiFi signal, uptime
+
+#### Hardware Connections:
+- **DHT22 VCC** → **3.3V**
+- **DHT22 Data** → **GPIO7 (D7)**
+- **DHT22 GND** → **GND**
+
+#### Troubleshooting Notes:
+- **Framework**: Uses latest Arduino framework for ESP32-S3 compatibility
+- **WiFi**: Enhanced compatibility settings for problematic routers
+- **Fallback**: Automatic AP mode activation if WiFi fails
+- **DHT22**: GPIO7 selected for optimal communication without pull-up resistor
 
 ### UPDATED: Xiao ESP32-C6 BLE Proxy Network
 **Purpose**: Bermuda BLE Trilateration for precise indoor location tracking
