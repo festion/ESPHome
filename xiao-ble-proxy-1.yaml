@@ -27,11 +27,12 @@ esphome:
 
 # ESP32-C6 specific configuration
 esp32:
-  board: esp32-c3-devkitm-1
-  flash_size: 4mb
-  variant: esp32c3
+  board: esp32-c6-devkitm-1
+  variant: esp32c6
   framework:
     type: esp-idf
+    version: 5.2.1
+    platform_version: 6.7.0
     sdkconfig_options:
       CONFIG_ESPTOOLPY_FLASHSIZE_4MB: y
       # BLE optimization options from Bermuda
