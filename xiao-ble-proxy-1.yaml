@@ -27,9 +27,9 @@ esphome:
 
 # ESP32-C6 specific configuration
 esp32:
-  board: esp32-c6-devkitc-1
+  board: esp32-c3-devkitm-1
   flash_size: 4mb
-  variant: esp32c6
+  variant: esp32c3
   framework:
     type: esp-idf
     sdkconfig_options:
@@ -71,8 +71,7 @@ api:
         - esp32_ble_tracker.stop_scan:
 
 ota:
-  - platform: esphome
-    password: ${ota_pw}
+  password: ${ota_pw}
 
 wifi:
   ssid: ${wifi_ssid}
@@ -97,12 +96,12 @@ esp32_ble_tracker:
     interval: ${ble_interval}
     window: ${ble_window}
 
-# iBeacon for location reference
-esp32_ble_beacon:
-  type: iBeacon
-  uuid: ${beacon_uuid}
-  major: ${beacon_major}
-  minor: ${beacon_minor}
+# iBeacon disabled - conflicts with esp32_ble_tracker
+# esp32_ble_beacon:
+#   type: iBeacon
+#   uuid: ${beacon_uuid}
+#   major: ${beacon_major}
+#   minor: ${beacon_minor}
 
 # Diagnostic sensors
 sensor:
@@ -146,5 +145,4 @@ button:
     name: "Safe Mode"
     entity_category: config
 
-# Safe mode for recovery
-safe_mode:
+# Safe mode for recovery (enabled via button above)

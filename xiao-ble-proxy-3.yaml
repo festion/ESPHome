@@ -15,9 +15,9 @@ substitutions:
   beacon_major: "42069"
   beacon_minor: "1003"  # Unique minor for proxy 3
 
-packages:
-  Bermuda.include_minimal: github://agittins/bermuda-proxies/packages/bermuda-proxy-esp32-c3-minimal.yaml
-# Note: Bermuda package enabled to fix metadevices bug
+# packages:
+#   Bermuda.include_minimal: github://agittins/bermuda-proxies/packages/bermuda-proxy-esp32-c3-minimal.yaml
+# Note: Commented out due to git permission issues, using inline configuration instead
 
 esphome:
   name: ${name}
@@ -70,8 +70,7 @@ api:
         - esp32_ble_tracker.stop_scan:
 
 ota:
-  - platform: esphome
-    password: ${ota_pw}
+  password: ${ota_pw}
 
 wifi:
   ssid: ${wifi_ssid}
@@ -88,20 +87,20 @@ captive_portal:
 bluetooth_proxy:
   active: True
 
-# BLE tracker with Bermuda-optimized settings
+# BLE tracker with Bermuda-optimized settings (fixed for metadevices issue)
 esp32_ble_tracker:
   scan_parameters:
-    continuous: True
+    continuous: False  # Don't auto start, control via API
     active: ${proxy_active_scan}
     interval: ${ble_interval}
     window: ${ble_window}
 
-# iBeacon for location reference
-esp32_ble_beacon:
-  type: iBeacon
-  uuid: ${beacon_uuid}
-  major: ${beacon_major}
-  minor: ${beacon_minor}
+# iBeacon disabled - conflicts with esp32_ble_tracker
+# esp32_ble_beacon:
+#   type: iBeacon
+#   uuid: ${beacon_uuid}
+#   major: ${beacon_major}
+#   minor: ${beacon_minor}
 
 # Diagnostic sensors
 sensor:
@@ -145,5 +144,4 @@ button:
     name: "Safe Mode"
     entity_category: config
 
-# Safe mode for recovery
-safe_mode:
+# Safe mode for recovery (enabled via button above)
