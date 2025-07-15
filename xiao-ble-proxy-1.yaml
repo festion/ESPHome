@@ -4,7 +4,7 @@ substitutions:
   name: xiao-ble-proxy1
   friendly_name: "XIAO BLE Proxy 1 - Living Room"
   comment: "XIAO ESP32C6 BLE Proxy optimized for Bermuda - Living Room"
-  name_add_mac_suffix: "True"
+  name_add_mac_suffix: "False"  # Disable MAC suffix to avoid Bermuda confusion
   baud_rate: "0"  # Disable serial logging for better performance
   ble_interval: 320ms
   ble_window: 300ms
@@ -17,7 +17,7 @@ substitutions:
 
 # packages:
 #   Bermuda.include_minimal: github://agittins/bermuda-proxies/packages/bermuda-proxy-esp32-c3-minimal.yaml
-# Note: Enable after basic configuration is working
+# Note: Commented out due to git permission issues, using inline configuration instead
 
 esphome:
   name: ${name}
@@ -34,20 +34,21 @@ esp32:
     type: esp-idf
     sdkconfig_options:
       CONFIG_ESPTOOLPY_FLASHSIZE_4MB: y
-      # BLE optimization options
+      # BLE optimization options from Bermuda
       CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y
+      CONFIG_BT_BLE_50_FEATURES_SUPPORTED: y  # For C6 devices
       CONFIG_ESP_TASK_WDT_TIMEOUT_S: "10"
     # version: 5.3.1  # Use recommended version
     # platform_version: 6.9.0  # Use recommended version
 
-# ADC component fix for ESP32-C6
-external_components:
-  - source:
-      type: git
-      url: https://github.com/lboue/esphome
-      ref: adc_oneshot
-    components: [ adc ]
-    refresh: 0s
+# ADC component fix for ESP32-C6 (disabled due to git permission issues)
+# external_components:
+#   - source:
+#       type: git
+#       url: https://github.com/lboue/esphome
+#       ref: adc_oneshot
+#     components: [ adc ]
+#     refresh: 0s
 
 logger:
   baud_rate: ${baud_rate}
@@ -88,10 +89,10 @@ captive_portal:
 bluetooth_proxy:
   active: True
 
-# BLE tracker with Bermuda-optimized settings
+# BLE tracker with Bermuda-optimized settings (fixed for metadevices issue)
 esp32_ble_tracker:
   scan_parameters:
-    continuous: True
+    continuous: False  # Don't auto start, control via API
     active: ${proxy_active_scan}
     interval: ${ble_interval}
     window: ${ble_window}

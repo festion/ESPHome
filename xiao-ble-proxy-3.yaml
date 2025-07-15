@@ -4,7 +4,7 @@ substitutions:
   name: xiao-ble-proxy3
   friendly_name: "XIAO BLE Proxy 3 - Kitchen"
   comment: "XIAO ESP32C6 BLE Proxy optimized for Bermuda - Kitchen"
-  name_add_mac_suffix: "True"
+  name_add_mac_suffix: "False"  # Disable MAC suffix to avoid Bermuda confusion
   baud_rate: "0"  # Disable serial logging for better performance
   ble_interval: 320ms
   ble_window: 300ms
@@ -15,9 +15,9 @@ substitutions:
   beacon_major: "42069"
   beacon_minor: "1003"  # Unique minor for proxy 3
 
-# packages:
-#   Bermuda.include_minimal: github://agittins/bermuda-proxies/packages/bermuda-proxy-esp32-c3-minimal.yaml
-# Note: Enable after basic configuration is working
+packages:
+  Bermuda.include_minimal: github://agittins/bermuda-proxies/packages/bermuda-proxy-esp32-c3-minimal.yaml
+# Note: Bermuda package enabled to fix metadevices bug
 
 esphome:
   name: ${name}
@@ -40,14 +40,14 @@ esp32:
     # version: 5.3.1  # Use recommended version
     # platform_version: 6.9.0  # Use recommended version
 
-# ADC component fix for ESP32-C6
-external_components:
-  - source:
-      type: git
-      url: https://github.com/lboue/esphome
-      ref: adc_oneshot
-    components: [ adc ]
-    refresh: 0s
+# ADC component fix for ESP32-C6 (disabled due to git permission issues)
+# external_components:
+#   - source:
+#       type: git
+#       url: https://github.com/lboue/esphome
+#       ref: adc_oneshot
+#     components: [ adc ]
+#     refresh: 0s
 
 logger:
   baud_rate: ${baud_rate}
